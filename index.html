@@ -422,7 +422,7 @@
             });
             
             const averageVote = voteCount > 0 ? (totalVotes / voteCount).toFixed(2) : 0;
-            const roundedAverageVote = roundToNearestVote(averageVote);
+            const roundedAverageVote = timeVotes.find(v => v.value === parseInt(averageVote))?.label || averageVote;
             document.getElementById('averageVote').textContent = roundedAverageVote;
             
             document.getElementById('resultsArea').style.display = 'block';
