@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App di Votazione Tempo</title>
+    <title>App di Votazione Team</title>
     <style>
-        /* Stili simili alla pagina precedente */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 800px;
@@ -23,7 +22,7 @@
             color: #333;
             text-align: center;
         }
-        .login-area, .voting-area {
+        .login-area {
             margin-bottom: 20px;
             padding: 15px;
             border: 1px solid #ddd;
@@ -31,13 +30,32 @@
         }
         .voting-area {
             display: none;
+            margin-top: 20px;
         }
-        .vote-select {
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
+        .vote-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
             margin-bottom: 20px;
-            width: 100%;
+        }
+        .vote-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #e0e0e0;
+            transition: background-color 0.3s;
+        }
+        .vote-btn:hover {
+            background-color: #d0d0d0;
+        }
+        .vote-btn.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .special-vote-btn {
+            background-color: #f0f0f0;
+            border: 1px dashed #aaa;
         }
         .reveal-area {
             margin-top: 30px;
@@ -60,11 +78,39 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
+        .results-area {
+            display: none;
+            margin-top: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .results-table th, .results-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .results-table th {
+            background-color: #f2f2f2;
+        }
         .status-panel {
             margin-top: 20px;
             padding: 10px;
             background-color: #e8f5e9;
             border-radius: 5px;
+        }
+        .new-session-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #673AB7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
         .user-status {
             margin-top: 15px;
@@ -78,6 +124,13 @@
         }
         .user-status .voted {
             background-color: #c8e6c9;
+        }
+		.vote-select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            width: 100%;
         }
         .reset-btn {
             position: fixed;
@@ -102,7 +155,7 @@
 <body>
     <button id="resetBtn" class="reset-btn" onclick="resetData()">Reset Dati</button>
     <div class="container">
-        <h1>App di Votazione Tempo</h1>
+        <h1>App di Votazione Team</h1>
         
         <div class="login-area" id="loginArea">
             <h2>Accedi</h2>
@@ -114,7 +167,12 @@
             <h2>Seleziona il tuo voto</h2>
             <p>Voto attuale: <span id="currentVote">Nessun voto</span></p>
             
-            <div class="vote-select">
+            <div class="vote-buttons" id="normalVotes">
+                <h3>Voti Standard</h3>
+                <div id="standardVotes"></div>
+            </div>
+            
+			<div class="vote-select">
                 <select id="timeVoteSelect" onchange="selectVote(this.value)">
                     <option value="">Seleziona un voto</option>
                 </select>
@@ -143,6 +201,7 @@
                 <tbody id="resultsBody">
                 </tbody>
             </table>
+            <p>Media dei voti: <span id="averageVote">0</span></p>
             
             <div style="margin-top: 20px; text-align: center;">
                 <button class="new-session-btn" onclick="startNewSession()">Inizia Nuova Sessione</button>
@@ -150,36 +209,13 @@
         </div>
     </div>
 
-    <script>
-        // Funzione di login
-        function login() {
-            const usernameInput = document.getElementById('usernameInput');
-            const username = usernameInput.value.trim();
-            if (username) {
-                currentUser = username;
-                document.getElementById('loginArea').style.display = 'none';
-                document.getElementById('votingArea').style.display = 'block';
-                loadSessionData();
-            }
-        }
-
-        // Reset dei dati
-        function resetData() {
-            serverData.users = [];
-            serverData.votes = {};
-            serverData.revealed = false;
-            updateSessionData();
-            document.getElementById('resultsArea').style.display = 'none';
-            document.getElementById('votingArea').style.display = 'block';
-        }
-    </script>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js";
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
 
         // Firebase config
-        const firebaseConfig = {
+		const firebaseConfig = {
             apiKey: "AIzaSyAavRqFIThZit-Hgt14Qzr5mFJo3UOLbZg",
             authDomain: "votazioneoraria.firebaseapp.com",
             databaseURL: "https://votazioneoraria-default-rtdb.europe-west1.firebasedatabase.app",
@@ -188,12 +224,8 @@
             messagingSenderId: "957793655858",
             appId: "1:957793655858:web:5d57042ad2a95643eab02b"
         };
-
-        // Inizializzazione Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-
-        // Valori di voto per il tempo
+		
+		// Valori di voto per il tempo
         const timeVotes = [];
         for (let i = 30; i <= 43200; i += 30) {
             const days = Math.floor(i / 1440);
@@ -205,23 +237,8 @@
             if (minutes > 0) label += `${minutes} minuti`;
             timeVotes.push({ label: label.trim(), value: i });
         }
-
-        // Dati server
-        const serverData = {
-            users: [],
-            votes: {},
-            revealed: false
-        };
-
-        let currentUser = null;
-
-        // Funzione di inizializzazione
-        function init() {
-            createVoteOptions();
-            loadSessionData();
-        }
-
-        // Crea le opzioni di voto
+		
+		// Crea le opzioni di voto
         function createVoteOptions() {
             const timeSelect = document.getElementById('timeVoteSelect');
             timeVotes.forEach(vote => {
@@ -232,7 +249,75 @@
             });
         }
 
-        // Carica i dati della sessione da Firebase
+        // Inizializzazione Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase(app);
+
+        // Simulazione di uno storage di dati server-side
+        const serverData = {
+            users: [],
+            votes: {},
+            revealed: false
+        };
+
+        let currentUser = null;
+
+        // Valori di voto possibili
+        const standardVotes = [0, 1, 2, 3, 5, 8, 13];
+        const exceptionalVotes = [20, 30, 40, 50, 60, 70, 80, 90, 100];
+
+        // Inizializzazione
+        function init() {
+            createVoteButtons();
+            loadSessionData();
+        }
+		
+		// Seleziona un voto
+        function selectVote(value) {
+            if (!currentUser) return;
+            serverData.votes[currentUser] = parseInt(value);
+            updateSessionData();
+            updateStatusPanel();
+        }
+		
+		// Crea le opzioni di voto
+        function createVoteOptions() {
+            const timeSelect = document.getElementById('timeVoteSelect');
+            timeVotes.forEach(vote => {
+                const option = document.createElement('option');
+                option.value = vote.value;
+                option.textContent = vote.label;
+                timeSelect.appendChild(option);
+            });
+        }
+
+        // Crea i pulsanti di voto
+        function createVoteButtons() {
+            const standardContainer = document.getElementById('standardVotes');
+            const exceptionalContainer = document.getElementById('exceptionalVotes');
+            
+            standardContainer.innerHTML = '';
+            exceptionalContainer.innerHTML = '';
+            
+            standardVotes.forEach(vote => {
+                const button = document.createElement('button');
+                button.classList.add('vote-btn');
+                button.textContent = vote;
+                button.onclick = () => selectVote(vote);
+                standardContainer.appendChild(button);
+            });
+            
+            exceptionalVotes.forEach(vote => {
+                const button = document.createElement('button');
+                button.classList.add('vote-btn', 'special-vote-btn');
+                button.textContent = vote;
+                button.onclick = () => selectVote(vote);
+                exceptionalContainer.appendChild(button);
+            });
+        }
+
+        // Carica i dati della sessione dal Firebase
         function loadSessionData() {
             const sessionRef = ref(database, 'session');
             onValue(sessionRef, (snapshot) => {
@@ -249,66 +334,146 @@
             });
         }
 
-        // Aggiorna lo stato del pannello utente
-        function updateStatusPanel() {
-            const votedCount = Object.keys(serverData.votes).length;
-            const totalCount = serverData.users.length;
-            const userStatusContainer = document.getElementById('userStatus');
-            const currentUserStatus = serverData.votes[currentUser] ? 'voted' : 'not-voted';
-            
-            document.getElementById('votedCount').textContent = votedCount;
-            document.getElementById('totalCount').textContent = totalCount;
-            document.getElementById('currentVote').textContent = serverData.votes[currentUser] || 'Nessun voto';
-            userStatusContainer.innerHTML = `<span class="${currentUserStatus}">${currentUserStatus}</span>`;
-
-            document.getElementById('revealBtn').disabled = votedCount < totalCount;
+        // Salva i dati della sessione su Firebase
+        function saveSessionData() {
+            const sessionRef = ref(database, 'session');
+            set(sessionRef, {
+                users: serverData.users,
+                votes: serverData.votes,
+                revealed: serverData.revealed
+            });
         }
 
-        // Seleziona un voto
-        function selectVote(value) {
-            if (!currentUser) return;
-            serverData.votes[currentUser] = parseInt(value);
-            updateSessionData();
+        // Login
+        window.login = function() {
+            const username = document.getElementById('usernameInput').value.trim();
+            if (!username) {
+                alert('Inserisci un nome utente valido');
+                return;
+            }
+            
+            if (serverData.users.includes(username)) {
+                alert('Questo nome utente è già in uso');
+                return;
+            }
+            
+            currentUser = username;
+            serverData.users.push(username);
+            saveSessionData();
+            
+            document.getElementById('loginArea').style.display = 'none';
+            document.getElementById('votingArea').style.display = 'block';
+            
             updateStatusPanel();
         }
 
-        // Funzione per rivelare i risultati
-        function revealResults() {
+        // Seleziona un voto
+        window.selectVote = function(vote) {
+            if (!currentUser) return;
+            
+            serverData.votes[currentUser] = vote;
+            document.getElementById('currentVote').textContent = vote;
+            
+            // Resetta tutti i pulsanti
+            document.querySelectorAll('.vote-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Seleziona il pulsante del voto attuale
+            document.querySelectorAll('.vote-btn').forEach(btn => {
+                if (parseInt(btn.textContent) === vote) {
+                    btn.classList.add('selected');
+                }
+            });
+            
+            saveSessionData();
+            updateStatusPanel();
+        }
+
+        // Aggiorna il pannello di stato
+        function updateStatusPanel() {
+            const totalUsers = serverData.users.length;
+            const votedUsers = Object.keys(serverData.votes).length;
+            
+            document.getElementById('totalCount').textContent = totalUsers;
+            document.getElementById('votedCount').textContent = votedUsers;
+            
+            const statusContainer = document.getElementById('userStatus');
+            statusContainer.innerHTML = '';
+            serverData.users.forEach(user => {
+                const statusElement = document.createElement('span');
+                statusElement.textContent = user;
+                if (serverData.votes[user]) {
+                    statusElement.classList.add('voted');
+                }
+                statusContainer.appendChild(statusElement);
+            });
+            
+            document.getElementById('revealBtn').disabled = votedUsers < totalUsers;
+        }
+
+        // Mostra i risultati
+        window.revealResults = function() {
             serverData.revealed = true;
-            updateSessionData();
+            saveSessionData();
             showResults();
         }
 
-        // Funzione per mostrare i risultati
+        // Mostra i risultati
         function showResults() {
             const resultsBody = document.getElementById('resultsBody');
             resultsBody.innerHTML = '';
-
-            Object.entries(serverData.votes).forEach(([user, vote]) => {
+            
+            let totalVotes = 0;
+            let voteCount = 0;
+            
+            serverData.users.forEach(user => {
+                const vote = serverData.votes[user] || 'Nessun voto';
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${user}</td><td>${vote} minuti</td>`;
+                row.innerHTML = `<td>${user}</td><td>${vote}</td>`;
                 resultsBody.appendChild(row);
+                
+                if (vote !== 'Nessun voto') {
+                    totalVotes += vote;
+                    voteCount++;
+                }
             });
-
+            
+            const averageVote = voteCount > 0 ? (totalVotes / voteCount).toFixed(2) : 0;
+            const roundedAverageVote = roundToNearestVote(averageVote);
+            document.getElementById('averageVote').textContent = roundedAverageVote;
+            
             document.getElementById('resultsArea').style.display = 'block';
         }
 
-        // Funzione per aggiornare i dati su Firebase
-        function updateSessionData() {
-            set(ref(database, 'session'), serverData);
+        // Arrotonda la media al voto possibile più vicino
+        function roundToNearestVote(averageVote) {
+            const allVotes = standardVotes.concat(exceptionalVotes);
+            return allVotes.reduce((prev, curr) => Math.abs(curr - averageVote) < Math.abs(prev - averageVote) ? curr : prev);
         }
 
-        // Funzione per iniziare una nuova sessione
-        function startNewSession() {
-            serverData.users = [];
+        // Inizia una nuova sessione
+        window.startNewSession = function() {
             serverData.votes = {};
             serverData.revealed = false;
-            updateSessionData();
+            saveSessionData();
+            
             document.getElementById('resultsArea').style.display = 'none';
             document.getElementById('votingArea').style.display = 'block';
+            updateStatusPanel();
         }
 
-        // Inizializzazione dell'app
+        // Reset dei dati
+        window.resetData = function() {
+            if (confirm("Sei sicuro di voler cancellare tutti i dati?")) {
+                serverData.users = [];
+                serverData.votes = {};
+                serverData.revealed = false;
+                saveSessionData();
+                location.reload(); // Ricarica la pagina per applicare le modifiche
+            }
+        }
+
         init();
     </script>
 </body>
