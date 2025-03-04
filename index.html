@@ -251,6 +251,10 @@
             timeVotes.push({ label: label.trim(), value: i });
         }
 
+        // Voti standard ed eccezionali
+        const standardVotes = timeVotes.map(vote => vote.value);
+        const exceptionalVotes = [43200, 21600, 10800]; // Esempio di voti eccezionali
+
         // Funzione di inizializzazione
         function init() {
             createVoteOptions();
@@ -280,7 +284,7 @@
             standardVotes.forEach(vote => {
                 const button = document.createElement('button');
                 button.classList.add('vote-btn');
-                button.textContent = vote;
+                button.textContent = timeVotes.find(v => v.value === vote).label;
                 button.onclick = () => selectVote(vote);
                 standardContainer.appendChild(button);
             });
@@ -288,7 +292,7 @@
             exceptionalVotes.forEach(vote => {
                 const button = document.createElement('button');
                 button.classList.add('vote-btn', 'special-vote-btn');
-                button.textContent = vote;
+                button.textContent = timeVotes.find(v => v.value === vote).label;
                 button.onclick = () => selectVote(vote);
                 exceptionalContainer.appendChild(button);
             });
