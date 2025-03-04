@@ -163,6 +163,30 @@
         </div>
     </div>
 
+    <script>
+        // Funzione di login
+        function login() {
+            const usernameInput = document.getElementById('usernameInput');
+            const username = usernameInput.value.trim();
+            if (username) {
+                currentUser = username;
+                document.getElementById('loginArea').style.display = 'none';
+                document.getElementById('votingArea').style.display = 'block';
+                loadSessionData();
+            }
+        }
+
+        // Reset dei dati
+        function resetData() {
+            serverData.users = [];
+            serverData.votes = {};
+            serverData.revealed = false;
+            updateSessionData();
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('votingArea').style.display = 'block';
+        }
+    </script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
@@ -268,18 +292,6 @@
             updateStatusPanel();
         }
 
-        // Carica sessione utente
-        function login() {
-            const usernameInput = document.getElementById('usernameInput');
-            const username = usernameInput.value.trim();
-            if (username) {
-                currentUser = username;
-                document.getElementById('loginArea').style.display = 'none';
-                document.getElementById('votingArea').style.display = 'block';
-                loadSessionData();
-            }
-        }
-
         // Funzione per rivelare i risultati
         function revealResults() {
             serverData.revealed = true;
@@ -308,16 +320,6 @@
 
         // Funzione per iniziare una nuova sessione
         function startNewSession() {
-            serverData.users = [];
-            serverData.votes = {};
-            serverData.revealed = false;
-            updateSessionData();
-            document.getElementById('resultsArea').style.display = 'none';
-            document.getElementById('votingArea').style.display = 'block';
-        }
-
-        // Reset dei dati
-        function resetData() {
             serverData.users = [];
             serverData.votes = {};
             serverData.revealed = false;
