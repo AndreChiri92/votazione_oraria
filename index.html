@@ -151,6 +151,15 @@
     </div>
 
     <script>
+        // Dati server
+        const serverData = {
+            users: [],
+            votes: {},
+            revealed: false
+        };
+
+        let currentUser = null;
+
         // Funzione di login
         function login() {
             const usernameInput = document.getElementById('usernameInput');
@@ -209,15 +218,6 @@
             if (minutes > 0) label += `${minutes} minuti`;
             timeVotes.push({ label: label.trim(), value: i });
         }
-
-        // Dati server
-        const serverData = {
-            users: [],
-            votes: {},
-            revealed: false
-        };
-
-        let currentUser = null;
 
         // Funzione di inizializzazione
         function init() {
