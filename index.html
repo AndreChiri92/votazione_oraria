@@ -125,7 +125,7 @@
         .user-status .voted {
             background-color: #c8e6c9;
         }
-		.vote-select {
+        .vote-select {
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ddd;
@@ -172,7 +172,7 @@
                 <div id="standardVotes"></div>
             </div>
             
-			<div class="vote-select">
+            <div class="vote-select">
                 <select id="timeVoteSelect" onchange="selectVote(this.value)">
                     <option value="">Seleziona un voto</option>
                 </select>
@@ -215,7 +215,7 @@
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
 
         // Firebase config
-		const firebaseConfig = {
+        const firebaseConfig = {
             apiKey: "AIzaSyAavRqFIThZit-Hgt14Qzr5mFJo3UOLbZg",
             authDomain: "votazioneoraria.firebaseapp.com",
             databaseURL: "https://votazioneoraria-default-rtdb.europe-west1.firebasedatabase.app",
@@ -224,8 +224,21 @@
             messagingSenderId: "957793655858",
             appId: "1:957793655858:web:5d57042ad2a95643eab02b"
         };
-		
-		// Valori di voto per il tempo
+
+        // Inizializzazione Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Dati server
+        const serverData = {
+            users: [],
+            votes: {},
+            revealed: false
+        };
+
+        let currentUser = null;
+
+        // Valori di voto per il tempo
         const timeVotes = [];
         for (let i = 30; i <= 43200; i += 30) {
             const days = Math.floor(i / 1440);
@@ -238,39 +251,14 @@
             timeVotes.push({ label: label.trim(), value: i });
         }
 
-        // Inizializzazione Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const database = getDatabase(app);
-
-        // Simulazione di uno storage di dati server-side
-        const serverData = {
-            users: [],
-            votes: {},
-            revealed: false
-        };
-
-        let currentUser = null;
-
-        // Valori di voto possibili
-        const standardVotes = [0, 1, 2, 3, 5, 8, 13];
-        const exceptionalVotes = [20, 30, 40, 50, 60, 70, 80, 90, 100];
-
-        // Inizializzazione
+        // Funzione di inizializzazione
         function init() {
+            createVoteOptions();
             createVoteButtons();
             loadSessionData();
         }
-		
-		// Seleziona un voto
-        function selectVote(value) {
-            if (!currentUser) return;
-            serverData.votes[currentUser] = parseInt(value);
-            updateSessionData();
-            updateStatusPanel();
-        }
-		
-		// Crea le opzioni di voto
+
+        // Crea le opzioni di voto
         function createVoteOptions() {
             const timeSelect = document.getElementById('timeVoteSelect');
             timeVotes.forEach(vote => {
@@ -306,7 +294,7 @@
             });
         }
 
-        // Carica i dati della sessione dal Firebase
+        // Carica i dati della sessione da Firebase
         function loadSessionData() {
             const sessionRef = ref(database, 'session');
             onValue(sessionRef, (snapshot) => {
@@ -360,8 +348,8 @@
         window.selectVote = function(vote) {
             if (!currentUser) return;
             
-            serverData.votes[currentUser] = vote;
-            document.getElementById('currentVote').textContent = vote;
+            serverData.votes[currentUser] = parseInt(vote);
+            document.getElementById('currentVote').textContent = timeVotes.find(v => v.value === parseInt(vote)).label;
             
             // Resetta tutti i pulsanti
             document.querySelectorAll('.vote-btn').forEach(btn => {
@@ -370,7 +358,7 @@
             
             // Seleziona il pulsante del voto attuale
             document.querySelectorAll('.vote-btn').forEach(btn => {
-                if (parseInt(btn.textContent) === vote) {
+                if (parseInt(btn.textContent) === parseInt(vote)) {
                     btn.classList.add('selected');
                 }
             });
@@ -418,8 +406,9 @@
             
             serverData.users.forEach(user => {
                 const vote = serverData.votes[user] || 'Nessun voto';
+                const voteLabel = timeVotes.find(v => v.value === vote)?.label || vote;
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${user}</td><td>${vote}</td>`;
+                row.innerHTML = `<td>${user}</td><td>${voteLabel}</td>`;
                 resultsBody.appendChild(row);
                 
                 if (vote !== 'Nessun voto') {
@@ -463,7 +452,7 @@
             }
         }
 
-        init();
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
