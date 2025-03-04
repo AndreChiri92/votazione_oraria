@@ -293,29 +293,29 @@
         }
 
         // Crea i pulsanti di voto
-        function createVoteButtons() {
-            const standardContainer = document.getElementById('standardVotes');
-            const exceptionalContainer = document.getElementById('exceptionalVotes');
+        // function createVoteButtons() {
+        //     const standardContainer = document.getElementById('standardVotes');
+        //     const exceptionalContainer = document.getElementById('exceptionalVotes');
             
-            standardContainer.innerHTML = '';
-            exceptionalContainer.innerHTML = '';
+        //     standardContainer.innerHTML = '';
+        //     exceptionalContainer.innerHTML = '';
             
-            standardVotes.forEach(vote => {
-                const button = document.createElement('button');
-                button.classList.add('vote-btn');
-                button.textContent = vote;
-                button.onclick = () => selectVote(vote);
-                standardContainer.appendChild(button);
-            });
+        //     standardVotes.forEach(vote => {
+        //         const button = document.createElement('button');
+        //         button.classList.add('vote-btn');
+        //         button.textContent = vote;
+        //         button.onclick = () => selectVote(vote);
+        //         standardContainer.appendChild(button);
+        //     });
             
-            exceptionalVotes.forEach(vote => {
-                const button = document.createElement('button');
-                button.classList.add('vote-btn', 'special-vote-btn');
-                button.textContent = vote;
-                button.onclick = () => selectVote(vote);
-                exceptionalContainer.appendChild(button);
-            });
-        }
+        //     exceptionalVotes.forEach(vote => {
+        //         const button = document.createElement('button');
+        //         button.classList.add('vote-btn', 'special-vote-btn');
+        //         button.textContent = vote;
+        //         button.onclick = () => selectVote(vote);
+        //         exceptionalContainer.appendChild(button);
+        //     });
+        // }
 
         // Carica i dati della sessione dal Firebase
         function loadSessionData() {
