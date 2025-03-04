@@ -172,11 +172,6 @@
                 <div id="standardVotes"></div>
             </div>
             
-            <div class="vote-buttons" id="exceptionalVotes">
-                <h3>Voti Eccezionali</h3>
-                <div id="exceptionalVotes"></div>
-            </div>
-            
 			<div class="vote-select">
                 <select id="timeVoteSelect" onchange="selectVote(this.value)">
                     <option value="">Seleziona un voto</option>
@@ -468,7 +463,7 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', init);
+        init();
     </script>
 </body>
 </html>
