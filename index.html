@@ -96,146 +96,8 @@
         }
     </style>
     <!-- Firebase -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
-
-        // Firebase config
-        const firebaseConfig = {
-            apiKey: "AIzaSyAavRqFIThZit-Hgt14Qzr5mFJo3UOLbZg",
-            authDomain: "votazioneoraria.firebaseapp.com",
-            databaseURL: "https://votazioneoraria-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "votazioneoraria",
-            storageBucket: "votazioneoraria.firebasestorage.app",
-            messagingSenderId: "957793655858",
-            appId: "1:957793655858:web:5d57042ad2a95643eab02b"
-        };
-
-        // Inizializzazione Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-
-        // Dati server
-        const serverData = {
-            users: [],
-            votes: {},
-            revealed: false
-        };
-
-        let currentUser = null;
-
-        // Valori di voto per il tempo
-        const timeVotes = [];
-        for (let i = 30; i <= 43200; i += 30) {
-            const days = Math.floor(i / 1440);
-            const hours = Math.floor((i % 1440) / 60);
-            const minutes = i % 60;
-            let label = '';
-            if (days > 0) label += `${days} giorni `;
-            if (hours > 0) label += `${hours} ore `;
-            if (minutes > 0) label += `${minutes} minuti`;
-            timeVotes.push({ label: label.trim(), value: i });
-        }
-
-        // Funzione di inizializzazione
-        function init() {
-            createVoteOptions();
-            loadSessionData();
-        }
-
-        // Crea le opzioni di voto
-        function createVoteOptions() {
-            const timeSelect = document.getElementById('timeVoteSelect');
-            timeVotes.forEach(vote => {
-                const option = document.createElement('option');
-                option.value = vote.value;
-                option.textContent = vote.label;
-                timeSelect.appendChild(option);
-            });
-        }
-
-        // Carica i dati della sessione da Firebase
-        function loadSessionData() {
-            const sessionRef = ref(database, 'session');
-            onValue(sessionRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    serverData.users = data.users || [];
-                    serverData.votes = data.votes || {};
-                    serverData.revealed = data.revealed || false;
-                    updateStatusPanel();
-                    if (serverData.revealed) {
-                        showResults();
-                    }
-                }
-            });
-        }
-
-        // Aggiorna lo stato del pannello utente
-        function updateStatusPanel() {
-            const votedCount = Object.keys(serverData.votes).length;
-            const totalCount = serverData.users.length;
-            const userStatusContainer = document.getElementById('userStatus');
-            const currentUserStatus = serverData.votes[currentUser] ? 'voted' : 'not-voted';
-            
-            document.getElementById('votedCount').textContent = votedCount;
-            document.getElementById('totalCount').textContent = totalCount;
-            document.getElementById('currentVote').textContent = serverData.votes[currentUser] || 'Nessun voto';
-            userStatusContainer.innerHTML = serverData.users.map(user => {
-                const statusClass = serverData.votes[user] ? 'voted' : 'not-voted';
-                return `<span class="${statusClass}">${user}</span>`;
-            }).join(' ');
-
-            document.getElementById('revealBtn').disabled = votedCount < totalCount;
-        }
-
-        // Seleziona un voto
-        function selectVote(value) {
-            if (!currentUser) return;
-            serverData.votes[currentUser] = parseInt(value);
-            updateSessionData();
-            updateStatusPanel();
-        }
-
-        // Funzione per rivelare i risultati
-        function revealResults() {
-            serverData.revealed = true;
-            updateSessionData();
-            showResults();
-        }
-
-        // Funzione per mostrare i risultati
-        function showResults() {
-            const resultsBody = document.getElementById('resultsBody');
-            resultsBody.innerHTML = '';
-
-            Object.entries(serverData.votes).forEach(([user, vote]) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `<td>${user}</td><td>${vote} minuti</td>`;
-                resultsBody.appendChild(row);
-            });
-
-            document.getElementById('resultsArea').style.display = 'block';
-        }
-
-        // Funzione per aggiornare i dati su Firebase
-        function updateSessionData() {
-            set(ref(database, 'session'), serverData);
-        }
-
-        // Funzione per iniziare una nuova sessione
-        function startNewSession() {
-            serverData.users = [];
-            serverData.votes = {};
-            serverData.revealed = false;
-            updateSessionData();
-            document.getElementById('resultsArea').style.display = 'none';
-            document.getElementById('votingArea').style.display = 'block';
-        }
-
-        // Inizializzazione dell'app
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
     <button id="resetBtn" class="reset-btn" onclick="resetData()">Reset Dati</button>
@@ -287,5 +149,167 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Funzione di login
+        function login() {
+            const usernameInput = document.getElementById('usernameInput');
+            const username = usernameInput.value.trim();
+            if (username) {
+                currentUser = username;
+                document.getElementById('loginArea').style.display = 'none';
+                document.getElementById('votingArea').style.display = 'block';
+                loadSessionData();
+            }
+        }
+
+        // Reset dei dati
+        function resetData() {
+            serverData.users = [];
+            serverData.votes = {};
+            serverData.revealed = false;
+            updateSessionData();
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('votingArea').style.display = 'block';
+        }
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyAavRqFIThZit-Hgt14Qzr5mFJo3UOLbZg",
+            authDomain: "votazioneoraria.firebaseapp.com",
+            databaseURL: "https://votazioneoraria-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "votazioneoraria",
+            storageBucket: "votazioneoraria.firebasestorage.app",
+            messagingSenderId: "957793655858",
+            appId: "1:957793655858:web:5d57042ad2a95643eab02b"
+        };
+
+        // Inizializzazione Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Valori di voto per il tempo
+        const timeVotes = [];
+        for (let i = 30; i <= 43200; i += 30) {
+            const days = Math.floor(i / 1440);
+            const hours = Math.floor((i % 1440) / 60);
+            const minutes = i % 60;
+            let label = '';
+            if (days > 0) label += `${days} giorni `;
+            if (hours > 0) label += `${hours} ore `;
+            if (minutes > 0) label += `${minutes} minuti`;
+            timeVotes.push({ label: label.trim(), value: i });
+        }
+
+        // Dati server
+        const serverData = {
+            users: [],
+            votes: {},
+            revealed: false
+        };
+
+        let currentUser = null;
+
+        // Funzione di inizializzazione
+        function init() {
+            createVoteOptions();
+            loadSessionData();
+        }
+
+        // Crea le opzioni di voto
+        function createVoteOptions() {
+            const timeSelect = document.getElementById('timeVoteSelect');
+            timeVotes.forEach(vote => {
+                const option = document.createElement('option');
+                option.value = vote.value;
+                option.textContent = vote.label;
+                timeSelect.appendChild(option);
+            });
+        }
+
+        // Carica i dati della sessione da Firebase
+        function loadSessionData() {
+            const sessionRef = ref(database, 'session');
+            onValue(sessionRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    serverData.users = data.users || [];
+                    serverData.votes = data.votes || {};
+                    serverData.revealed = data.revealed || false;
+                    updateStatusPanel();
+                    if (serverData.revealed) {
+                        showResults();
+                    }
+                }
+            });
+        }
+
+        // Aggiorna lo stato del pannello utente
+        function updateStatusPanel() {
+            const votedCount = Object.keys(serverData.votes).length;
+            const totalCount = serverData.users.length;
+            const userStatusContainer = document.getElementById('userStatus');
+            const currentUserStatus = serverData.votes[currentUser] ? 'voted' : 'not-voted';
+            
+            document.getElementById('votedCount').textContent = votedCount;
+            document.getElementById('totalCount').textContent = totalCount;
+            document.getElementById('currentVote').textContent = serverData.votes[currentUser] || 'Nessun voto';
+            userStatusContainer.innerHTML = `<span class="${currentUserStatus}">${currentUserStatus}</span>`;
+
+            document.getElementById('revealBtn').disabled = votedCount < totalCount;
+        }
+
+        // Seleziona un voto
+        function selectVote(value) {
+            if (!currentUser) return;
+            serverData.votes[currentUser] = parseInt(value);
+            updateSessionData();
+            updateStatusPanel();
+        }
+
+        // Funzione per rivelare i risultati
+        function revealResults() {
+            serverData.revealed = true;
+            updateSessionData();
+            showResults();
+        }
+
+        // Funzione per mostrare i risultati
+        function showResults() {
+            const resultsBody = document.getElementById('resultsBody');
+            resultsBody.innerHTML = '';
+
+            Object.entries(serverData.votes).forEach(([user, vote]) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${user}</td><td>${vote} minuti</td>`;
+                resultsBody.appendChild(row);
+            });
+
+            document.getElementById('resultsArea').style.display = 'block';
+        }
+
+        // Funzione per aggiornare i dati su Firebase
+        function updateSessionData() {
+            set(ref(database, 'session'), serverData);
+        }
+
+        // Funzione per iniziare una nuova sessione
+        function startNewSession() {
+            serverData.users = [];
+            serverData.votes = {};
+            serverData.revealed = false;
+            updateSessionData();
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('votingArea').style.display = 'block';
+        }
+
+        // Inizializzazione dell'app
+        init();
+    </script>
 </body>
 </html>
