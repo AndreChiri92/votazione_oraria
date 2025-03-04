@@ -234,7 +234,58 @@
         }
 
         // Inizializzazione dell'app
-        init();
+        document.addEventListener('DOMContentLoaded', init);
     </script>
+</head>
+<body>
+    <button id="resetBtn" class="reset-btn" onclick="resetData()">Reset Dati</button>
+    <div class="container">
+        <h1>App di Votazione Tempo</h1>
+        
+        <div class="login-area" id="loginArea">
+            <h2>Accedi</h2>
+            <input type="text" id="usernameInput" placeholder="Il tuo nome" style="padding: 8px; width: 200px;">
+            <button onclick="login()" style="padding: 8px 15px; margin-left: 10px;">Accedi</button>
+        </div>
+        
+        <div class="voting-area" id="votingArea">
+            <h2>Seleziona il tuo voto</h2>
+            <p>Voto attuale: <span id="currentVote">Nessun voto</span></p>
+            
+            <div class="vote-select">
+                <select id="timeVoteSelect" onchange="selectVote(this.value)">
+                    <option value="">Seleziona un voto</option>
+                </select>
+            </div>
+            
+            <div class="status-panel">
+                <h3>Status Votazione</h3>
+                <p>Partecipanti che hanno votato: <span id="votedCount">0</span>/<span id="totalCount">0</span></p>
+                <div class="user-status" id="userStatus"></div>
+            </div>
+            
+            <div class="reveal-area">
+                <button id="revealBtn" class="reveal-btn" disabled onclick="revealResults()">Rivela i Risultati</button>
+            </div>
+        </div>
+        
+        <div class="results-area" id="resultsArea">
+            <h2>Risultati della Votazione</h2>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Partecipante</th>
+                        <th>Voto</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="new-session-btn" onclick="startNewSession()">Inizia Nuova Sessione</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
