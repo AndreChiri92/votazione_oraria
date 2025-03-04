@@ -207,20 +207,17 @@
         const database = getDatabase(app);
 
         // Valori di voto per il tempo
-        const timeVotes = [
-            { label: "30 minuti", value: 30 },
-            { label: "1 ora", value: 60 },
-            { label: "2 ore", value: 120 },
-            { label: "5 ore", value: 300 },
-            { label: "1 giorno", value: 1440 },
-            { label: "2 giorni", value: 2880 },
-            { label: "3 giorni", value: 4320 },
-            { label: "7 giorni", value: 10080 },
-            { label: "10 giorni", value: 14400 },
-            { label: "20 giorni", value: 28800 },
-            { label: "30 giorni", value: 43200 },
-            { label: "50 giorni", value: 72000 }
-        ];
+        const timeVotes = [];
+        for (let i = 30; i <= 43200; i += 30) {
+            const days = Math.floor(i / 1440);
+            const hours = Math.floor((i % 1440) / 60);
+            const minutes = i % 60;
+            let label = '';
+            if (days > 0) label += `${days} giorni `;
+            if (hours > 0) label += `${hours} ore `;
+            if (minutes > 0) label += `${minutes} minuti`;
+            timeVotes.push({ label: label.trim(), value: i });
+        }
 
         // Dati server
         const serverData = {
