@@ -32,26 +32,12 @@
         .voting-area {
             display: none;
         }
-        .vote-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .vote-btn {
-            padding: 10px 15px;
-            border: none;
+        .vote-select {
+            padding: 10px;
             border-radius: 5px;
-            cursor: pointer;
-            background-color: #e0e0e0;
-            transition: background-color 0.3s;
-        }
-        .vote-btn:hover {
-            background-color: #d0d0d0;
-        }
-        .vote-btn.selected {
-            background-color: #4CAF50;
-            color: white;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            width: 100%;
         }
         .reveal-area {
             margin-top: 30px;
@@ -128,9 +114,10 @@
             <h2>Seleziona il tuo voto</h2>
             <p>Voto attuale: <span id="currentVote">Nessun voto</span></p>
             
-            <div class="vote-buttons" id="timeVotes">
-                <h3>Voti Tempo</h3>
-                <div id="timeVoteButtons"></div>
+            <div class="vote-select">
+                <select id="timeVoteSelect" onchange="selectVote(this.value)">
+                    <option value="">Seleziona un voto</option>
+                </select>
             </div>
             
             <div class="status-panel">
@@ -230,21 +217,18 @@
 
         // Funzione di inizializzazione
         function init() {
-            createVoteButtons();
+            createVoteOptions();
             loadSessionData();
         }
 
-        // Crea i pulsanti di voto
-        function createVoteButtons() {
-            const timeContainer = document.getElementById('timeVoteButtons');
-            timeContainer.innerHTML = '';
-            
+        // Crea le opzioni di voto
+        function createVoteOptions() {
+            const timeSelect = document.getElementById('timeVoteSelect');
             timeVotes.forEach(vote => {
-                const button = document.createElement('button');
-                button.classList.add('vote-btn');
-                button.textContent = vote.label;
-                button.onclick = () => selectVote(vote.value);
-                timeContainer.appendChild(button);
+                const option = document.createElement('option');
+                option.value = vote.value;
+                option.textContent = vote.label;
+                timeSelect.appendChild(option);
             });
         }
 
@@ -283,7 +267,7 @@
         // Seleziona un voto
         function selectVote(value) {
             if (!currentUser) return;
-            serverData.votes[currentUser] = value;
+            serverData.votes[currentUser] = parseInt(value);
             updateSessionData();
             updateStatusPanel();
         }
