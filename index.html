@@ -157,8 +157,12 @@
             const username = usernameInput.value.trim();
             if (username) {
                 currentUser = username;
+                if (!serverData.users.includes(username)) {
+                    serverData.users.push(username);
+                }
                 document.getElementById('loginArea').style.display = 'none';
                 document.getElementById('votingArea').style.display = 'block';
+                updateSessionData();
                 loadSessionData();
             }
         }
@@ -259,7 +263,10 @@
             document.getElementById('votedCount').textContent = votedCount;
             document.getElementById('totalCount').textContent = totalCount;
             document.getElementById('currentVote').textContent = serverData.votes[currentUser] || 'Nessun voto';
-            userStatusContainer.innerHTML = `<span class="${currentUserStatus}">${currentUserStatus}</span>`;
+            userStatusContainer.innerHTML = serverData.users.map(user => {
+                const statusClass = serverData.votes[user] ? 'voted' : 'not-voted';
+                return `<span class="${statusClass}">${user}</span>`;
+            }).join(' ');
 
             document.getElementById('revealBtn').disabled = votedCount < totalCount;
         }
