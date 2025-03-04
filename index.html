@@ -237,17 +237,6 @@
             if (minutes > 0) label += `${minutes} minuti`;
             timeVotes.push({ label: label.trim(), value: i });
         }
-		
-		// Crea le opzioni di voto
-        function createVoteOptions() {
-            const timeSelect = document.getElementById('timeVoteSelect');
-            timeVotes.forEach(vote => {
-                const option = document.createElement('option');
-                option.value = vote.value;
-                option.textContent = vote.label;
-                timeSelect.appendChild(option);
-            });
-        }
 
         // Inizializzazione Firebase
         const app = initializeApp(firebaseConfig);
