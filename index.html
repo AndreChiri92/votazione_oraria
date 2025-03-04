@@ -163,20 +163,43 @@
         </div>
     </div>
 
+    <script>
+        // Funzione di login
+        function login() {
+            const usernameInput = document.getElementById('usernameInput');
+            const username = usernameInput.value.trim();
+            if (username) {
+                currentUser = username;
+                document.getElementById('loginArea').style.display = 'none';
+                document.getElementById('votingArea').style.display = 'block';
+                loadSessionData();
+            }
+        }
+
+        // Reset dei dati
+        function resetData() {
+            serverData.users = [];
+            serverData.votes = {};
+            serverData.revealed = false;
+            updateSessionData();
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('votingArea').style.display = 'block';
+        }
+    </script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
 
         // Firebase config
         const firebaseConfig = {
-            apiKey: "AIzaSyAzn8QpAQomb63y4iDxz8SYIs-Sce2wUk4",
-            authDomain: "votazioneeffort.firebaseapp.com",
-            databaseURL: "https://votazioneeffort-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "votazioneeffort",
-            storageBucket: "votazioneeffort.firebasestorage.app",
-            messagingSenderId: "263753067760",
-            appId: "1:263753067760:web:67e58acfa9139f4df76635",
-            measurementId: "G-E75RWK576Q"
+            apiKey: "AIzaSyAavRqFIThZit-Hgt14Qzr5mFJo3UOLbZg",
+            authDomain: "votazioneoraria.firebaseapp.com",
+            databaseURL: "https://votazioneoraria-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "votazioneoraria",
+            storageBucket: "votazioneoraria.firebasestorage.app",
+            messagingSenderId: "957793655858",
+            appId: "1:957793655858:web:5d57042ad2a95643eab02b"
         };
 
         // Inizializzazione Firebase
@@ -268,18 +291,6 @@
             updateStatusPanel();
         }
 
-        // Carica sessione utente
-        function login() {
-            const usernameInput = document.getElementById('usernameInput');
-            const username = usernameInput.value.trim();
-            if (username) {
-                currentUser = username;
-                document.getElementById('loginArea').style.display = 'none';
-                document.getElementById('votingArea').style.display = 'block';
-                loadSessionData();
-            }
-        }
-
         // Funzione per rivelare i risultati
         function revealResults() {
             serverData.revealed = true;
@@ -308,16 +319,6 @@
 
         // Funzione per iniziare una nuova sessione
         function startNewSession() {
-            serverData.users = [];
-            serverData.votes = {};
-            serverData.revealed = false;
-            updateSessionData();
-            document.getElementById('resultsArea').style.display = 'none';
-            document.getElementById('votingArea').style.display = 'block';
-        }
-
-        // Reset dei dati
-        function resetData() {
             serverData.users = [];
             serverData.votes = {};
             serverData.revealed = false;
