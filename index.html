@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App di Votazione Tempo</title>
+    <style>
+        /* Stili simili alla pagina precedente */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .login-area, .voting-area {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .voting-area {
+            display: none;
+        }
+        .vote-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .vote-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #e0e0e0;
+            transition: background-color 0.3s;
+        }
+        .vote-btn:hover {
+            background-color: #d0d0d0;
+        }
+        .vote-btn.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .reveal-area {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .reveal-btn {
+            padding: 12px 25px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .reveal-btn:hover {
+            background-color: #0b7dda;
+        }
+        .reveal-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status-panel {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border-radius: 5px;
+        }
+        .user-status {
+            margin-top: 15px;
+        }
+        .user-status span {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background-color: #f0f0f0;
+        }
+        .user-status .voted {
+            background-color: #c8e6c9;
+        }
+        .reset-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .reset-btn:hover {
+            background-color: #ff1a1a;
+        }
+    </style>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+</head>
+<body>
+    <button id="resetBtn" class="reset-btn" onclick="resetData()">Reset Dati</button>
+    <div class="container">
+        <h1>App di Votazione Tempo</h1>
+        
+        <div class="login-area" id="loginArea">
+            <h2>Accedi</h2>
+            <input type="text" id="usernameInput" placeholder="Il tuo nome" style="padding: 8px; width: 200px;">
+            <button onclick="login()" style="padding: 8px 15px; margin-left: 10px;">Accedi</button>
+        </div>
+        
+        <div class="voting-area" id="votingArea">
+            <h2>Seleziona il tuo voto</h2>
+            <p>Voto attuale: <span id="currentVote">Nessun voto</span></p>
+            
+            <div class="vote-buttons" id="timeVotes">
+                <h3>Voti Tempo</h3>
+                <div id="timeVoteButtons"></div>
+            </div>
+            
+            <div class="status-panel">
+                <h3>Status Votazione</h3>
+                <p>Partecipanti che hanno votato: <span id="votedCount">0</span>/<span id="totalCount">0</span></p>
+                <div class="user-status" id="userStatus"></div>
+            </div>
+            
+            <div class="reveal-area">
+                <button id="revealBtn" class="reveal-btn" disabled onclick="revealResults()">Rivela i Risultati</button>
+            </div>
+        </div>
+        
+        <div class="results-area" id="resultsArea">
+            <h2>Risultati della Votazione</h2>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Partecipante</th>
+                        <th>Voto</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="new-session-btn" onclick="startNewSession()">Inizia Nuova Sessione</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyAzn8QpAQomb63y4iDxz8SYIs-Sce2wUk4",
+            authDomain: "votazioneeffort.firebaseapp.com",
+            databaseURL: "https://votazioneeffort-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "votazioneeffort",
+            storageBucket: "votazioneeffort.firebasestorage.app",
+            messagingSenderId: "263753067760",
+            appId: "1:263753067760:web:67e58acfa9139f4df76635",
+            measurementId: "G-E75RWK576Q"
+        };
+
+        // Inizializzazione Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Valori di voto per il tempo
+        const timeVotes = [
+            { label: "30 minuti", value: 30 },
+            { label: "1 ora", value: 60 },
+            { label: "2 ore", value: 120 },
+            { label: "5 ore", value: 300 },
+            { label: "1 giorno", value: 1440 },
+            { label: "2 giorni", value: 2880 },
+            { label: "3 giorni", value: 4320 },
+            { label: "7 giorni", value: 10080 },
+            { label: "10 giorni", value: 14400 },
+            { label: "20 giorni", value: 28800 },
+            { label: "30 giorni", value: 43200 },
+            { label: "50 giorni", value: 72000 }
+        ];
+
+        // Dati server
+        const serverData = {
+            users: [],
+            votes: {},
+            revealed: false
+        };
+
+        let currentUser = null;
+
+        // Funzione di inizializzazione
+        function init() {
+            createVoteButtons();
+            loadSessionData();
+        }
+
+        // Crea i pulsanti di voto
+        function createVoteButtons() {
+            const timeContainer = document.getElementById('timeVoteButtons');
+            timeContainer.innerHTML = '';
+            
+            timeVotes.forEach(vote => {
+                const button = document.createElement('button');
+                button.classList.add('vote-btn');
+                button.textContent = vote.label;
+                button.onclick = () => selectVote(vote.value);
+                timeContainer.appendChild(button);
+            });
+        }
+
+        // Carica i dati della sessione da Firebase
+        function loadSessionData() {
+            const sessionRef = ref(database, 'session');
+            onValue(sessionRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    serverData.users = data.users || [];
+                    serverData.votes = data.votes || {};
+                    serverData.revealed = data.revealed || false;
+                    updateStatusPanel();
+                    if (serverData.revealed) {
+                        showResults();
+                    }
+                }
+            });
+        }
+
+        // Aggiorna lo stato del pannello utente
+        function updateStatusPanel() {
+            const votedCount = Object.keys(serverData.votes).length;
+            const totalCount = serverData.users.length;
+            const userStatusContainer = document.getElementById('userStatus');
+            const currentUserStatus = serverData.votes[currentUser] ? 'voted' : 'not-voted';
+            
+            document.getElementById('votedCount').textContent = votedCount;
+            document.getElementById('totalCount').textContent = totalCount;
+            document.getElementById('currentVote').textContent = serverData.votes[currentUser] || 'Nessun voto';
+            userStatusContainer.innerHTML = `<span class="${currentUserStatus}">${currentUserStatus}</span>`;
+
+            document.getElementById('revealBtn').disabled = votedCount < totalCount;
+        }
+
+        // Seleziona un voto
+        function selectVote(value) {
+            if (!currentUser) return;
+            serverData.votes[currentUser] = value;
+            updateSessionData();
+            updateStatusPanel();
+        }
+
+        // Carica sessione utente
+        function login() {
+            const usernameInput = document.getElementById('usernameInput');
+            const username = usernameInput.value.trim();
+            if (username) {
+                currentUser = username;
+                document.getElementById('loginArea').style.display = 'none';
+                document.getElementById('votingArea').style.display = 'block';
+                loadSessionData();
+            }
+        }
+
+        // Funzione per rivelare i risultati
+        function revealResults() {
+            serverData.revealed = true;
+            updateSessionData();
+            showResults();
+        }
+
+        // Funzione per mostrare i risultati
+        function showResults() {
+            const resultsBody = document.getElementById('resultsBody');
+            resultsBody.innerHTML = '';
+
+            Object.entries(serverData.votes).forEach(([user, vote]) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${user}</td><td>${vote} minuti</td>`;
+                resultsBody.appendChild(row);
+            });
+
+            document.getElementById('resultsArea').style.display = 'block';
+        }
+
+        // Funzione per aggiornare i dati su Firebase
+        function updateSessionData() {
+            set(ref(database, 'session'), serverData);
+        }
+
+        // Funzione per iniziare una nuova sessione
+        function startNewSession() {
+            serverData.users = [];
+            serverData.votes = {};
+            serverData.revealed = false;
+            updateSessionData();
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('votingArea').style.display = 'block';
+        }
+
+        // Reset dei dati
+        function resetData() {
+            serverData.users = [];
+            serverData.votes = {};
+            serverData.revealed = false;
+            updateSessionData();
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('votingArea').style.display = 'block';
+        }
+
+        // Inizializzazione dell'app
+        init();
+    </script>
+</body>
+</html>
