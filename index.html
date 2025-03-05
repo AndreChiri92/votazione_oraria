@@ -233,7 +233,7 @@
 
 		// Da 1 giorno a 30 giorni (con step da 4 ore, considerando 8 ore lavorative per giorno)
 		const timeBased1To30days = [];
-		for (let i = 8 * 60; i <= 30 * 8 * 60; i += 4 * 60) {  // Ogni passo è di 4 ore (240 minuti)
+		for (let i = 8 * 60; i < 30 * 8 * 60; i += 4 * 60) {  // Ogni passo è di 4 ore (240 minuti)
 		  timeBased1To30days.push(i);
 		}
 
@@ -336,7 +336,7 @@
             if (!currentUser) return;
             
             serverData.votes[currentUser] = vote;
-            document.getElementById('currentVote').textContent = vote;
+            document.getElementById('currentVote').textContent = convertToReadableTime(vote);
             
             // Resetta tutti i pulsanti
             document.querySelectorAll('.vote-btn').forEach(btn => {
@@ -394,7 +394,7 @@
             serverData.users.forEach(user => {
                 const vote = serverData.votes[user] || 'Nessun voto';
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${user}</td><td>${vote}</td>`;
+                row.innerHTML = `<td>${user}</td><td>${convertToReadableTime(vote)}</td>`;
                 resultsBody.appendChild(row);
                 
                 if (vote !== 'Nessun voto') {
@@ -404,7 +404,7 @@
             });
             
             const averageVote = voteCount > 0 ? (totalVotes / voteCount).toFixed(2) : 0;
-            document.getElementById('averageVote').textContent = averageVote;
+            document.getElementById('averageVote').textContent = convertToReadableTime(averageVote);
             
             document.getElementById('resultsArea').style.display = 'block';
         }
