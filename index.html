@@ -125,13 +125,6 @@
         .user-status .voted {
             background-color: #c8e6c9;
         }
-        .vote-select {
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            margin-bottom: 20px;
-            width: 100%;
-        }
         .reset-btn {
             position: fixed;
             top: 10px;
@@ -172,12 +165,6 @@
                 <div id="standardVotes"></div>
             </div>
             
-            <div class="vote-select">
-                <select id="timeVoteSelect" onchange="selectVote(this.value)">
-                    <option value="">Seleziona un voto</option>
-                </select>
-            </div>
-            
             <div class="status-panel">
                 <h3>Status Votazione</h3>
                 <p>Partecipanti che hanno votato: <span id="votedCount">0</span>/<span id="totalCount">0</span></p>
@@ -211,7 +198,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js";
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
 
         // Firebase config
@@ -229,7 +215,7 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Dati server
+        // Simulazione di uno storage di dati server-side
         const serverData = {
             users: [],
             votes: {},
@@ -238,67 +224,64 @@
 
         let currentUser = null;
 
-        // Valori di voto per il tempo
-        const timeVotes = [];
-        for (let i = 30; i <= 43200; i += 30) {
-            const days = Math.floor(i / 1440);
-            const hours = Math.floor((i % 1440) / 60);
-            const minutes = i % 60;
-            let label = '';
-            if (days > 0) label += `${days} giorni `;
-            if (hours > 0) label += `${hours} ore `;
-            if (minutes > 0) label += `${minutes} minuti`;
-            timeVotes.push({ label: label.trim(), value: i });
-        }
+        // Valori di voto possibili
+		// Da 30 minuti a 1 giorno (con step da 30 minuti)
+		const timeBased30minTo1day = [];
+		for (let i = 30; i < 8 * 60; i += 30) {  // 8 ore = 480 minuti, escludiamo 480 minuti
+		  timeBased30minTo1day.push(i);
+		}
 
-        // Voti standard ed eccezionali
-        const standardVotes = timeVotes.map(vote => vote.value);
-        const exceptionalVotes = [43200, 21600, 10800]; // Esempio di voti eccezionali
+		// Da 1 giorno a 30 giorni (con step da 4 ore, considerando 8 ore lavorative per giorno)
+		const timeBased1To30days = [];
+		for (let i = 8 * 60; i <= 30 * 8 * 60; i += 4 * 60) {  // Ogni passo è di 4 ore (240 minuti)
+		  timeBased1To30days.push(i);
+		}
 
-        // Funzione di inizializzazione
+		// Unione degli array
+		const standardVotes = [...timeBased30minTo1day, ...timeBased1To30days];
+
+		// Funzione per la conversione dei minuti in formato leggibile (ore e giorni)
+		function convertToReadableTime(minutes) {
+		  if (minutes < 60) {
+			return `${minutes} min`;
+		  } else if (minutes < 480) { // Meno di 8 ore
+			const hours = Math.floor(minutes / 60);
+			const remainingMinutes = minutes % 60;
+			return `${hours}h ${remainingMinutes}min`;
+		  } else { // Da 1 giorno in su, ogni giorno ha massimo 8 ore lavorative
+			const days = Math.floor(minutes / 480); // 1 giorno lavorativo = 480 minuti
+			const remainingMinutes = minutes % 480;
+			const remainingHours = Math.floor(remainingMinutes / 60);
+			return `${days}d ${remainingHours}h`;
+		  }
+		}
+
+
+		// Converti i valori di voto in formato leggibile
+		const readableVotes = standardVotes.map(convertToReadableTime);
+
+        // Inizializzazione
         function init() {
-            createVoteOptions();
             createVoteButtons();
             loadSessionData();
-        }
-
-        // Crea le opzioni di voto
-        function createVoteOptions() {
-            const timeSelect = document.getElementById('timeVoteSelect');
-            timeVotes.forEach(vote => {
-                const option = document.createElement('option');
-                option.value = vote.value;
-                option.textContent = vote.label;
-                timeSelect.appendChild(option);
-            });
         }
 
         // Crea i pulsanti di voto
         function createVoteButtons() {
             const standardContainer = document.getElementById('standardVotes');
-            const exceptionalContainer = document.getElementById('exceptionalVotes');
             
             standardContainer.innerHTML = '';
-            exceptionalContainer.innerHTML = '';
             
             standardVotes.forEach(vote => {
                 const button = document.createElement('button');
                 button.classList.add('vote-btn');
-                button.textContent = timeVotes.find(v => v.value === vote).label;
+                button.textContent = convertToReadableTime(vote);
                 button.onclick = () => selectVote(vote);
                 standardContainer.appendChild(button);
             });
-            
-            exceptionalVotes.forEach(vote => {
-                const button = document.createElement('button');
-                button.classList.add('vote-btn', 'special-vote-btn');
-                button.textContent = timeVotes.find(v => v.value === vote).label;
-                button.onclick = () => selectVote(vote);
-                exceptionalContainer.appendChild(button);
-            });
         }
 
-        // Carica i dati della sessione da Firebase
+        // Carica i dati della sessione dal Firebase
         function loadSessionData() {
             const sessionRef = ref(database, 'session');
             onValue(sessionRef, (snapshot) => {
@@ -352,8 +335,8 @@
         window.selectVote = function(vote) {
             if (!currentUser) return;
             
-            serverData.votes[currentUser] = parseInt(vote);
-            document.getElementById('currentVote').textContent = timeVotes.find(v => v.value === parseInt(vote)).label;
+            serverData.votes[currentUser] = vote;
+            document.getElementById('currentVote').textContent = vote;
             
             // Resetta tutti i pulsanti
             document.querySelectorAll('.vote-btn').forEach(btn => {
@@ -362,7 +345,7 @@
             
             // Seleziona il pulsante del voto attuale
             document.querySelectorAll('.vote-btn').forEach(btn => {
-                if (parseInt(btn.textContent) === parseInt(vote)) {
+                if (parseInt(btn.textContent) === vote) {
                     btn.classList.add('selected');
                 }
             });
@@ -410,9 +393,8 @@
             
             serverData.users.forEach(user => {
                 const vote = serverData.votes[user] || 'Nessun voto';
-                const voteLabel = timeVotes.find(v => v.value === vote)?.label || vote;
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${user}</td><td>${voteLabel}</td>`;
+                row.innerHTML = `<td>${user}</td><td>${vote}</td>`;
                 resultsBody.appendChild(row);
                 
                 if (vote !== 'Nessun voto') {
@@ -422,16 +404,9 @@
             });
             
             const averageVote = voteCount > 0 ? (totalVotes / voteCount).toFixed(2) : 0;
-            const roundedAverageVote = timeVotes.find(v => v.value === parseInt(averageVote))?.label || averageVote;
-            document.getElementById('averageVote').textContent = roundedAverageVote;
+            document.getElementById('averageVote').textContent = averageVote;
             
             document.getElementById('resultsArea').style.display = 'block';
-        }
-
-        // Arrotonda la media al voto possibile più vicino
-        function roundToNearestVote(averageVote) {
-            const allVotes = standardVotes.concat(exceptionalVotes);
-            return allVotes.reduce((prev, curr) => Math.abs(curr - averageVote) < Math.abs(prev - averageVote) ? curr : prev);
         }
 
         // Inizia una nuova sessione
@@ -456,7 +431,7 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', init);
+        init();
     </script>
 </body>
 </html>
